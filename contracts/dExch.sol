@@ -2,6 +2,7 @@ pragma solidity ^0.6.3;
 
 // import IERC20 from OpenZeppelin
 import './IERC20.sol';
+import './Dai.sol';
 
 /// @title Contract for ERC-20 based decentralised exchange
 contract dExch {
