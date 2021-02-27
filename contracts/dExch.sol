@@ -90,24 +90,47 @@ contract dExch {
         }
 
         // create the order
-        Order memory order = Order(
-            nextOrderId,
-            msg.sender,
-            side,
-            ticker,
-            price,
-            amount,
-            block.timestamp,
-            amount,
-            false
-        );
+        Order memory order = Order( nextOrderId, msg.sender, side, ticker, price, amount, block.timestamp, amount, false );
 
         // push the order to relevant order array
-        Order[] storage oBook = orderBooks[ticker][side];
+        Order[] storage oBook = orderBooks[ticker][side];       // NOTE: USED storage[] to get .push() => Subsequently, ALL Order[] MUST be storage
         oBook.push(order);
 
         // run algo to sort order array
+        orderBooks[ticker][side] = sort(oBook, side);
 
-        // done
+        // done - clean up?
+    }
+
+    // EXTRA: separate sort fn                          <== POTENTIALLY MOST GAS INTENSIVE PART
+    function sort(Order[] storage orders, Side side) internal returns (Order[] storage){
+        // bubble sort -                                <== UPGRADE TO BISECTION TYPE SORT FOR IMPROVED EFFICIENCY!! (since rest of array already sorted)
+        // Input: sorted list, new entry at end of array
+        //  Traverse array in reverse until index 0 (for or while)
+        //  BUY:  test: is a[i-1] < a[i] ? swap : break
+        //  SELL: test: is a[i-1] > a[i] ? swap : break
+        //  decrement index
+        uint i = orders.length;
+        while(i > 0){                                   // TO IMPROVE: rewrite with if() check outside, Side needs only be checked once, not every iteration - will save gas on large order book
+            if(side == Side.BUY){
+                if(orders[i - 1].price < orders[i].price){ orders = swap(orders, i-1, i); } else { break; } // could make fn: swapIf2ndGreater(entry1, entry2)
+            } else {
+                if(orders[i - 1].price > orders[i].price){ orders = swap(orders, i-1, i); } else { break; }
+            }
+            i--;
+        }
+
+        return orders;
+    }
+
+    // EXTRA: create swap as separate fn
+    function swap(Order[] storage orders, uint index1, uint index2) internal returns (Order[] storage){
+        require(index1 > 0 && index2 > 0 && index1 < orders.length && index2 < orders.length, "One or more indices out of bounds.");
+        Order memory temp = orders[index1];
+        orders[index1] = orders[index2];
+        orders[index2] = temp;
+        // delete temp;                                 // QUESTION: automatically cleared up by EVM at end of fn? Should be since it's of memory type
+
+        return orders;
     }
 }
