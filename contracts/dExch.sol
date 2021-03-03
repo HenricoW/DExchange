@@ -11,6 +11,8 @@ import './Zrx.sol';
 
 /// @title Contract for ERC-20 based decentralised exchange
 contract dExch {
+    // exchange properties
+    bytes32 constant DAI = bytes32('DAI');              // Quote currency of the exchange
 
     // token properties
     struct Token { bytes32 ticker; address tokenAddr; }
@@ -32,7 +34,7 @@ contract dExch {
         uint qty;
         uint date;
         uint remaining;                         // qty not filled yet
-        bool completed;
+        bool isFilled;
     }
     mapping(address => Order[]) public userOrders;                                     // EXTRA: mapping of user open orders
     mapping(bytes32 => mapping(Side => Order[])) public orderBooks;                    // ticker => Side => OrderArray
@@ -82,9 +84,12 @@ contract dExch {
 
     // user: createLimitOrder
     function createLimitOrder(Side side, bytes32 ticker, uint price, uint amount) external tokenExists(ticker) {
+        // cannot trade DAI: qquote curr of exch
+        require(ticker != DAI, "Cannot trade DAI");
+         
         // check necessary balance: buy (DAI) or sell (ticker)
         if(side == Side.BUY) { 
-            require(userBalances[msg.sender][bytes32('DAI')] >= amount * price, 'Insufficient DAI balance');
+            require(userBalances[msg.sender][DAI] >= amount * price, 'Insufficient DAI balance');
         } else {
             require(userBalances[msg.sender][ticker] >= amount, 'Insufficient token balance');
         }
@@ -104,19 +109,13 @@ contract dExch {
 
     // EXTRA: separate sort fn                          <== POTENTIALLY MOST GAS INTENSIVE PART
     function sort(Order[] storage orders, Side side) internal returns (Order[] storage){
-        // bubble sort -                                <== UPGRADE TO BISECTION TYPE SORT FOR IMPROVED EFFICIENCY!! (since rest of array already sorted)
-        // Input: sorted list, new entry at end of array
-        //  Traverse array in reverse until index 0 (for or while)
-        //  BUY:  test: is a[i-1] < a[i] ? swap : break
-        //  SELL: test: is a[i-1] > a[i] ? swap : break
-        //  decrement index
+        // bubble sort -                                <== UPGRADE TO DIFFERENT TYPE SORT FOR IMPROVED EFFICIENCY!! (since rest of array already sorted)
         uint i = orders.length;
-        while(i > 0){                                   // TO IMPROVE: rewrite with if() check outside, Side needs only be checked once, not every iteration - will save gas on large order book
-            if(side == Side.BUY){
-                if(orders[i - 1].price < orders[i].price){ orders = swap(orders, i-1, i); } else { break; } // could make fn: swapIf2ndGreater(entry1, entry2)
-            } else {
-                if(orders[i - 1].price > orders[i].price){ orders = swap(orders, i-1, i); } else { break; }
-            }
+        while(i > 0){
+            if( (side == Side.BUY) && (orders[i - 1].price > orders[i].price) ) { break }
+            else if( orders[i - 1].price < orders[i].price ) { break }
+
+            orders = swap(orders, i-1, i);
             i--;
         }
 
@@ -129,7 +128,6 @@ contract dExch {
         Order memory temp = orders[index1];
         orders[index1] = orders[index2];
         orders[index2] = temp;
-        // delete temp;                                 // QUESTION: automatically cleared up by EVM at end of fn? Should be since it's of memory type
 
         return orders;
     }
