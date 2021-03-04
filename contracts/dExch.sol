@@ -116,32 +116,14 @@ contract dExch {
         Order[] storage oBook = orderBooks[ticker][side];       // NOTE: USED storage[] to get .push() => Subsequently, ALL Order[] MUST be storage
         oBook.push(order);
 
+        // EXTRA - separate sort as fn so it can be updated:
         // run algo to sort order array
         orderBooks[ticker][side] = sort(oBook, side);
+
+        nextOrderId++;
     }
 
     // create market order (ticker, side, amount, price)
-    //   does token exist
-    //   if SELL: check if token bal sufficient (BUY: DAI bal checked at every limit order fill)
-    //   get relevant order book
-    //   Loop through orders from start while amount > 0:
-    //     fillAmount = min(mktO.amount, lmtO.remaining)
-    //     check BUY: DAI bal > lmtO.price * fillAmount ?
-    //     DAIamount = fillAmount * lmtO.price
-    //     if BUY
-    //       lmtO.owner: credit DAI, debit token
-    //       msg.sender: credit token, debit DAI
-    //     if SELL
-    //       msg.sender: credit DAI, debit token
-    //       lmtO.owner: credit token, debit DAI
-    //     
-    //     amount -= fillAmount
-    //     if lmtO.remaining == lmtO.amount then lmtO.filled = true
-    //     
-    //   Loop through order book & remove filled orders
-    //     re-sort order book (if need be)
-    //     recommit order book
-    //     
     function createMarketOrder(bytes32 ticker, Side side, uint amount) external tokenExists(ticker) notQuoteTkn(ticker) {
 
         // check necessary balance: sell (ticker)
@@ -200,6 +182,25 @@ contract dExch {
         }
 
         // Loop through order book => remove filled orders & commit order book back to main storage
+        // CHANGE TO ALGO BELOW TO REDUCE TIME COMPLEXITY TO O(n), CURRENTLY approx O(n^2) WORST CASE
+        // continue where i left off in prev while loop (i defined outside of while block)
+        //   { if mkt order filled by 1st limit order in book, i will = 1, thus, i = (index of order that filled mkt order) + 1 }
+        // if i == 1 && order[i - 1] isFilled == false, skip the following, else, do the following
+        //   1. test order[i - 1] isFilled ? j = i : j = i - 1
+        //   2. loop thru order book, from k = 0 to (length - 1) - j
+        //        obook[k] = obook[k + j]
+        //   3. Loop j times
+        //        obook.pop()
+        uint j = 0;
+        while(j < oBook.length && oBook[j].isFilled){
+            for(uint k = j; k < oBook.length - 1; k++){
+                oBook[k] = oBook[k + 1];
+            }
+            oBook.pop();
+            j++;
+        }
+
+        // push oBook back to storage?
 
     }
 
