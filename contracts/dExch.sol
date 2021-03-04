@@ -39,6 +39,18 @@ contract dExch {
     mapping(address => Order[]) public userOrders;                                     // EXTRA: mapping of user open orders
     mapping(bytes32 => mapping(Side => Order[])) public orderBooks;                    // ticker => Side => OrderArray
     uint public nextOrderId;                                                           // for next unique order id
+    uint public nextTradeId;                                                           // for next unique trade id
+
+    // events
+    event tradeExecuted(
+        uint tradeId,
+        uint orderId,
+        bytes32 ticker,
+        Side side,
+        uint price,
+        uint amount,
+        uint timestamp
+    );
 
     // modifiers
     modifier onlyAdmin() {
@@ -48,6 +60,11 @@ contract dExch {
 
     modifier tokenExists(bytes32 ticker) {
         require(tokenDetails[ticker].tokenAddr != address(0), "This token is not supported.");
+        _;
+    }
+
+    modifier notQuoteTkn(bytes32 ticker) {
+        require(ticker != DAI, "Cannot trade DAI");
         _;
     }
 
@@ -83,10 +100,8 @@ contract dExch {
     }
 
     // user: createLimitOrder
-    function createLimitOrder(Side side, bytes32 ticker, uint price, uint amount) external tokenExists(ticker) {
-        // cannot trade DAI: qquote curr of exch
-        require(ticker != DAI, "Cannot trade DAI");
-         
+    function createLimitOrder(Side side, bytes32 ticker, uint price, uint amount) external tokenExists(ticker) notQuoteTkn(ticker) {
+        
         // check necessary balance: buy (DAI) or sell (ticker)
         if(side == Side.BUY) { 
             require(userBalances[msg.sender][DAI] >= amount * price, 'Insufficient DAI balance');
@@ -103,8 +118,89 @@ contract dExch {
 
         // run algo to sort order array
         orderBooks[ticker][side] = sort(oBook, side);
+    }
 
-        // done - clean up?
+    // create market order (ticker, side, amount, price)
+    //   does token exist
+    //   if SELL: check if token bal sufficient (BUY: DAI bal checked at every limit order fill)
+    //   get relevant order book
+    //   Loop through orders from start while amount > 0:
+    //     fillAmount = min(mktO.amount, lmtO.remaining)
+    //     check BUY: DAI bal > lmtO.price * fillAmount ?
+    //     DAIamount = fillAmount * lmtO.price
+    //     if BUY
+    //       lmtO.owner: credit DAI, debit token
+    //       msg.sender: credit token, debit DAI
+    //     if SELL
+    //       msg.sender: credit DAI, debit token
+    //       lmtO.owner: credit token, debit DAI
+    //     
+    //     amount -= fillAmount
+    //     if lmtO.remaining == lmtO.amount then lmtO.filled = true
+    //     
+    //   Loop through order book & remove filled orders
+    //     re-sort order book (if need be)
+    //     recommit order book
+    //     
+    function createMarketOrder(bytes32 ticker, Side side, uint amount) external tokenExists(ticker) notQuoteTkn(ticker) {
+
+        // check necessary balance: sell (ticker)
+        if(side == Side.SELL) { 
+            require(userBalances[msg.sender][ticker] >= amount, 'Insufficient token balance');
+        }
+
+        // get order book for opposite side (storage to use pop() later)
+        Order[] storage oBook = orderBooks[ticker][(side == Side.SELL) ? Side.BUY : Side.SELL];
+
+        // loop through order book to match orders
+        uint i = 0;
+        while(i < oBook.length && amount > 0){
+            // set order qty
+            uint fillAmount = (amount > oBook[i].remaining) ? oBook[i].remaining : amount;
+
+            // if BUY: check DAI balance => will work even if amount > balance[msg.sender] > oBook[0].remaining
+            uint DAIamount = fillAmount * oBook[i].price;
+
+            // update order book
+            oBook[i].remaining -= fillAmount;
+            amount -= fillAmount;
+
+            // update user balances
+            if(side == Side.BUY) {                                                                  // <== REFACTOR THIS if-else BLOCK
+                require(userBalances[msg.sender][DAI] >= DAIamount, 'Insufficient DAI balance');
+                // ticker records
+                userBalances[oBook[i].creator][ticker] -= fillAmount;                               // makerTknBal
+                userBalances[msg.sender][ticker] += fillAmount;                                     // takerTknBal
+                // DAI records
+                userBalances[oBook[i].creator][DAI] += DAIamount;
+                userBalances[msg.sender][DAI] -= DAIamount;
+            } else {
+                // ticker records
+                userBalances[oBook[i].creator][ticker] += fillAmount;
+                userBalances[msg.sender][ticker] -= fillAmount;
+                // DAI records
+                userBalances[oBook[i].creator][DAI] -= DAIamount;
+                userBalances[msg.sender][DAI] += DAIamount;
+            }
+
+            if(oBook[i].remaining == 0) oBook[i].isFilled = true;
+
+            emit tradeExecuted(
+                nextTradeId,
+                nextOrderId,
+                ticker,
+                side,
+                oBook[i].price,
+                fillAmount,
+                block.timestamp
+            );
+            nextTradeId++;
+
+            i++;
+        }
+
+        // Loop through order book => remove filled orders & commit order book back to main storage
+
     }
 
     // EXTRA: separate sort fn                          <== POTENTIALLY MOST GAS INTENSIVE PART
@@ -112,8 +208,8 @@ contract dExch {
         // bubble sort -                                <== UPGRADE TO DIFFERENT TYPE SORT FOR IMPROVED EFFICIENCY!! (since rest of array already sorted)
         uint i = orders.length;
         while(i > 0){
-            if( (side == Side.BUY) && (orders[i - 1].price > orders[i].price) ) { break }
-            else if( orders[i - 1].price < orders[i].price ) { break }
+            if( (side == Side.BUY) && (orders[i - 1].price > orders[i].price) ) { break; }
+            else if( orders[i - 1].price < orders[i].price ) { break; }
 
             orders = swap(orders, i-1, i);
             i--;
