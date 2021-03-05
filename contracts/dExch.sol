@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-// import IERC20 from OpenZeppelin
 import './IERC20.sol';
+// import './SafeMath.sol'                              
 import './Dai.sol';
 import './Rep.sol';
 import './Bat.sol';
@@ -11,6 +11,7 @@ import './Zrx.sol';
 
 /// @title Contract for ERC-20 based decentralised exchange
 contract dExch {
+    
     // exchange properties
     bytes32 constant DAI = bytes32('DAI');              // Quote currency of the exchange
 
@@ -27,13 +28,13 @@ contract dExch {
     enum Side { BUY, SELL }
     struct Order {
         uint id;
-        address creator;                        // EXTRA: keep track of which order belongs to who
+        address creator;
         Side side;
         bytes32 ticker;
         uint price;
         uint qty;
         uint date;
-        uint remaining;                         // qty not filled yet
+        uint remaining;
         bool isFilled;
     }
     mapping(address => Order[]) public userOrders;                                     // EXTRA: mapping of user open orders
@@ -84,7 +85,6 @@ contract dExch {
     // user: deposit (ticker, amount) - use transferFrom(user, self, amount) -> usr will have to apporve contract, IERC20.sol on ticker addr
     function deposit(bytes32 ticker, uint amount) external tokenExists(ticker) {
         IERC20 _tkn = IERC20(tokenDetails[ticker].tokenAddr);
-        // require(_tkn.balanceOf(msg.sender) >= amount, 'Insufficient tokan balance');  =>  will be enforced by token itself
         userBalances[msg.sender][ticker] += amount;
 
         _tkn.transferFrom(msg.sender, address(this), amount);
@@ -113,11 +113,10 @@ contract dExch {
         Order memory order = Order( nextOrderId, msg.sender, side, ticker, price, amount, block.timestamp, amount, false );
 
         // push the order to relevant order array
-        Order[] storage oBook = orderBooks[ticker][side];       // NOTE: USED storage[] to get .push() => Subsequently, ALL Order[] MUST be storage
+        Order[] storage oBook = orderBooks[ticker][side];
         oBook.push(order);
 
         // EXTRA - separate sort as fn so it can be updated:
-        // run algo to sort order array
         orderBooks[ticker][side] = sort(oBook, side);
 
         nextOrderId++;
@@ -148,11 +147,11 @@ contract dExch {
             amount -= fillAmount;
 
             // update user balances
-            if(side == Side.BUY) {                                                                  // <== REFACTOR THIS if-else BLOCK
+            if(side == Side.BUY) {
                 require(userBalances[msg.sender][DAI] >= DAIamount, 'Insufficient DAI balance');
                 // ticker records
-                userBalances[oBook[i].creator][ticker] -= fillAmount;                               // makerTknBal
-                userBalances[msg.sender][ticker] += fillAmount;                                     // takerTknBal
+                userBalances[oBook[i].creator][ticker] -= fillAmount;
+                userBalances[msg.sender][ticker] += fillAmount;
                 // DAI records
                 userBalances[oBook[i].creator][DAI] += DAIamount;
                 userBalances[msg.sender][DAI] -= DAIamount;
@@ -182,15 +181,6 @@ contract dExch {
         }
 
         // Loop through order book => remove filled orders & commit order book back to main storage
-        // CHANGE TO ALGO BELOW TO REDUCE TIME COMPLEXITY TO O(n), CURRENTLY approx O(n^2) WORST CASE
-        // continue where i left off in prev while loop (i defined outside of while block)
-        //   { if mkt order filled by 1st limit order in book, i will = 1, thus, i = (index of order that filled mkt order) + 1 }
-        // if i == 1 && order[i - 1] isFilled == false, skip the following, else, do the following
-        //   1. test order[i - 1] isFilled ? j = i : j = i - 1
-        //   2. loop thru order book, from k = 0 to (length - 1) - j
-        //        obook[k] = obook[k + j]
-        //   3. Loop j times
-        //        obook.pop()
         uint j = 0;
         while(j < oBook.length && oBook[j].isFilled){
             for(uint k = j; k < oBook.length - 1; k++){
@@ -200,13 +190,12 @@ contract dExch {
             j++;
         }
 
-        // push oBook back to storage?
+        // push oBook back to storage
 
     }
 
-    // EXTRA: separate sort fn                          <== POTENTIALLY MOST GAS INTENSIVE PART
+    // EXTRA: separate sort fn
     function sort(Order[] storage orders, Side side) internal returns (Order[] storage){
-        // bubble sort -                                <== UPGRADE TO DIFFERENT TYPE SORT FOR IMPROVED EFFICIENCY!! (since rest of array already sorted)
         uint i = orders.length;
         while(i > 0){
             if( (side == Side.BUY) && (orders[i - 1].price > orders[i].price) ) { break; }
