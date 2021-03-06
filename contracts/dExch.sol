@@ -3,11 +3,12 @@
 pragma solidity ^0.8.0;
 
 import './IERC20.sol';
-// import './SafeMath.sol'                              
+import './SafeMath.sol';
 import './Dai.sol';
 import './Rep.sol';
 import './Bat.sol';
 import './Zrx.sol';
+import './Utils.sol';
 
 /// @title Contract for ERC-20 based decentralised exchange
 contract dExch {
@@ -23,24 +24,10 @@ contract dExch {
 
     // user properties
     mapping(address => mapping(bytes32 => uint)) public userBalances;           // usrAddr => ticker => balance
-
-    // order properties
-    enum Side { BUY, SELL }
-    struct Order {
-        uint id;
-        address creator;
-        Side side;
-        bytes32 ticker;
-        uint price;
-        uint qty;
-        uint date;
-        uint remaining;
-        bool isFilled;
-    }
-    mapping(address => Order[]) public userOrders;                                     // EXTRA: mapping of user open orders
-    mapping(bytes32 => mapping(Side => Order[])) public orderBooks;                    // ticker => Side => OrderArray
-    uint public nextOrderId;                                                           // for next unique order id
-    uint public nextTradeId;                                                           // for next unique trade id
+    mapping(address => Order[]) public userOrders;                              // EXTRA: mapping of user open orders
+    mapping(bytes32 => mapping(Side => Order[])) public orderBooks;             // ticker => Side => OrderArray
+    uint public nextOrderId;                                                    // for next unique order id
+    uint public nextTradeId;                                                    // for next unique trade id
 
     // events
     event tradeExecuted(
@@ -117,7 +104,7 @@ contract dExch {
         oBook.push(order);
 
         // EXTRA - separate sort as fn so it can be updated:
-        orderBooks[ticker][side] = sort(oBook, side);
+        Utils.sort(oBook, side);
 
         nextOrderId++;
     }
@@ -194,27 +181,5 @@ contract dExch {
 
     }
 
-    // EXTRA: separate sort fn
-    function sort(Order[] storage orders, Side side) internal returns (Order[] storage){
-        uint i = orders.length;
-        while(i > 0){
-            if( (side == Side.BUY) && (orders[i - 1].price > orders[i].price) ) { break; }
-            else if( orders[i - 1].price < orders[i].price ) { break; }
-
-            orders = swap(orders, i-1, i);
-            i--;
-        }
-
-        return orders;
-    }
-
-    // EXTRA: create swap as separate fn
-    function swap(Order[] storage orders, uint index1, uint index2) internal returns (Order[] storage){
-        require(index1 > 0 && index2 > 0 && index1 < orders.length && index2 < orders.length, "One or more indices out of bounds.");
-        Order memory temp = orders[index1];
-        orders[index1] = orders[index2];
-        orders[index2] = temp;
-
-        return orders;
-    }
+    
 }
