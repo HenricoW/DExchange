@@ -121,44 +121,52 @@ contract dExch {
         Order[] storage oBook = orderBooks[ticker][(side == Side.SELL) ? Side.BUY : Side.SELL];
 
         // loop through order book to match orders
+        matchOrders(oBook, amount, side, ticker);
+
+        // Loop through order book => remove filled orders & commit order book back to main storage
+        removeFilledOrders(oBook);
+
+    }
+
+    function matchOrders(Order[] storage _oBook, uint _amount, Side _side, bytes32 _ticker) internal {
         uint i = 0;
-        while(i < oBook.length && amount > 0){
+        while(i < _oBook.length && _amount > 0){
             // set order qty
-            uint fillAmount = (amount > oBook[i].remaining) ? oBook[i].remaining : amount;
+            uint fillAmount = (_amount > _oBook[i].remaining) ? _oBook[i].remaining : _amount;
 
             // if BUY: check DAI balance => will work even if amount > balance[msg.sender] > oBook[0].remaining
-            uint DAIamount = fillAmount * oBook[i].price;
+            uint DAIamount = fillAmount * _oBook[i].price;
 
             // update order book
-            oBook[i].remaining -= fillAmount;
-            amount -= fillAmount;
+            _oBook[i].remaining -= fillAmount;
+            _amount -= fillAmount;
 
             // update user balances
-            if(side == Side.BUY) {
+            if(_side == Side.BUY) {
                 require(userBalances[msg.sender][DAI] >= DAIamount, 'Insufficient DAI balance');
                 // ticker records
-                userBalances[oBook[i].creator][ticker] -= fillAmount;
-                userBalances[msg.sender][ticker] += fillAmount;
+                userBalances[_oBook[i].creator][_ticker] -= fillAmount;
+                userBalances[msg.sender][_ticker] += fillAmount;
                 // DAI records
-                userBalances[oBook[i].creator][DAI] += DAIamount;
+                userBalances[_oBook[i].creator][DAI] += DAIamount;
                 userBalances[msg.sender][DAI] -= DAIamount;
             } else {
                 // ticker records
-                userBalances[oBook[i].creator][ticker] += fillAmount;
-                userBalances[msg.sender][ticker] -= fillAmount;
+                userBalances[_oBook[i].creator][_ticker] += fillAmount;
+                userBalances[msg.sender][_ticker] -= fillAmount;
                 // DAI records
-                userBalances[oBook[i].creator][DAI] -= DAIamount;
+                userBalances[_oBook[i].creator][DAI] -= DAIamount;
                 userBalances[msg.sender][DAI] += DAIamount;
             }
 
-            if(oBook[i].remaining == 0) oBook[i].isFilled = true;
+            if(_oBook[i].remaining == 0) _oBook[i].isFilled = true;
 
             emit tradeExecuted(
                 nextTradeId,
                 nextOrderId,
-                ticker,
-                side,
-                oBook[i].price,
+                _ticker,
+                _side,
+                _oBook[i].price,
                 fillAmount,
                 block.timestamp
             );
@@ -166,20 +174,17 @@ contract dExch {
 
             i++;
         }
-
-        // Loop through order book => remove filled orders & commit order book back to main storage
-        uint j = 0;
-        while(j < oBook.length && oBook[j].isFilled){
-            for(uint k = j; k < oBook.length - 1; k++){
-                oBook[k] = oBook[k + 1];
-            }
-            oBook.pop();
-            j++;
-        }
-
-        // push oBook back to storage
-
     }
 
+    function removeFilledOrders(Order[] storage _oBook) internal {
+        uint j = 0;
+        while(j < _oBook.length && _oBook[j].isFilled){
+            for(uint k = j; k < _oBook.length - 1; k++){
+                _oBook[k] = _oBook[k + 1];
+            }
+            _oBook.pop();
+            j++;
+        }
+    }
     
 }
