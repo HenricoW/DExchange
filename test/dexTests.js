@@ -10,45 +10,42 @@ contract("Dex", (accounts) => {
     beforeEach(async () => {
 
         [dai, bat, rep, zrx, dex] = await Promise.all([
-            Dai.new(),
-            Bat.new(),
-            Rep.new(),
-            Zrx.new(),
-            Dex.new(),
+            Dai.new(), Bat.new(), Rep.new(), Zrx.new(), Dex.new(),
         ]);
 
         const [b32DAI, b32BAT, b32REP, b32ZRX] = web3.utils.fromAscii(['DAI', 'BAT', 'REP', 'ZRX']);
         const tickers = [b32DAI, b32BAT, b32REP, b32ZRX];
         const tokenPtrs = [dai, bat, rep, zrx];
-
-        await Promise.all(() => {
-            dex.addToken(b32DAI, dai.address);
-            dex.addToken(b32BAT, bat.address);
-            dex.addToken(b32REP, rep.address);
-            dex.addToken(b32ZRX, zrx.address);
-        });
-
+        
         dexClients = [accounts[1], accounts[2]]
         amounts = web3.utils.toWei('1000');
 
+        // add tokens to dex support
+        if(tokenPtrs.length !== tickers.length){
+            console.error("Token tickers and pointer arrays are not of the same length!");
+        } else {
+            for(const i = 0; i < tokenPtrs.length; i++){
+                await dex.addToken(tickers[i], tokenPtrs[i]);
+            }
+        }
+
+        // seed accounts with each token supported
         dexClients.map(async acc => {
             await Promise.all(() => {
-                dai.faucet(acc, amounts);
-                bat.faucet(acc, amounts);
-                rep.faucet(acc, amounts);
-                zrx.faucet(acc, amounts);
+                tokenPtrs.map((ptr) => {
+                    ptr.faucet(acc, amounts);
+                });
             });
         });
 
+        // approve the dex on the account owners' behalf
         dexClients.map(async (acc) => {
             await Promise.all(() => {
-                dai.approve(dex.address, amounts, {from: acc});
-                bat.approve(dex.address, amounts, {from: acc});
-                rep.approve(dex.address, amounts, {from: acc});
-                zrx.approve(dex.address, amounts, {from: acc});
+                tokenPtrs.map(ptr => {
+                    ptr.approve(dex.address, amounts, {from: acc});
+                });
             });
         });
-        
         
     });
 
