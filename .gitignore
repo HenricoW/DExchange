@@ -2,3 +2,4 @@ build/
 SafeMath.sol
 notes.txt
 Utils.sol
+node_modules

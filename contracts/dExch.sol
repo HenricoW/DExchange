@@ -15,16 +15,16 @@ contract dExch {
     
     // exchange properties
     bytes32 constant DAI = bytes32('DAI');              // Quote currency of the exchange
+    address public admin;
 
     // token properties
     struct Token { bytes32 ticker; address tokenAddr; }
-    address public admin;
     bytes32[] public tokenList;
     mapping (bytes32 => Token) public tokenDetails;                             // ticker => Token
 
     // user properties
     mapping(address => mapping(bytes32 => uint)) public userBalances;           // usrAddr => ticker => balance
-    mapping(address => Order[]) public userOrders;                              // EXTRA: mapping of user open orders
+    // mapping(address => Order[]) public userOrders;                              // EXTRA: mapping of user open orders
     mapping(bytes32 => mapping(Side => Order[])) public orderBooks;             // ticker => Side => OrderArray
     uint public nextOrderId;                                                    // for next unique order id
     uint public nextTradeId;                                                    // for next unique trade id
@@ -69,6 +69,15 @@ contract dExch {
         tokenList.push(_ticker);
     }
 
+    // view supported tokens
+    function viewTokenList() external view returns(string[] memory){
+        string[] memory tokens = new string[](tokenList.length);
+        for(uint i = 0; i < tokenList.length; i++){
+            tokens[i] = string(abi.encodePacked(tokenList[i]));
+        }
+        return tokens;
+    }
+
     // user: deposit (ticker, amount) - use transferFrom(user, self, amount) -> usr will have to apporve contract, IERC20.sol on ticker addr
     function deposit(bytes32 ticker, uint amount) external tokenExists(ticker) {
         IERC20 _tkn = IERC20(tokenDetails[ticker].tokenAddr);
@@ -107,6 +116,11 @@ contract dExch {
         Utils.sort(oBook, side);
 
         nextOrderId++;
+    }
+
+    // view the order book
+    function viewOrderBook(bytes32 _ticker, Side _side) external view returns(Order[] memory){
+        return orderBooks[_ticker][_side];
     }
 
     // create market order (ticker, side, amount, price)
