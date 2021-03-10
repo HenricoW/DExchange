@@ -1,4 +1,5 @@
 const { expectRevert } = require('@openzeppelin/test-helpers');
+const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const Dai = artifacts.require('../contracts/Dai.sol');
 const Bat = artifacts.require('../contracts/Bat.sol');
 const Zrx = artifacts.require('../contracts/Zrx.sol');
@@ -46,22 +47,42 @@ contract("dexTest", (accounts) => {
 
     // CLIENT DEPOSIT:
     // Happy path - token is supported
-    it('Should deposit a supported token', async () => {
-        const amount = web3.utils.toWei('100');
-        await dex.deposit(b32DAI, amount, {from: accounts[1]});
+    // it('Should deposit a supported token', async () => {
+    //     const amount = web3.utils.toWei('100');
+    //     await dex.deposit(b32DAI, amount, {from: accounts[1]});
         
-        const userBal = await dex.userBalances(accounts[1], b32DAI);
-        assert(userBal.toString() === amount);
-    });
+    //     const userBal = await dex.userBalances(accounts[1], b32DAI);
+    //     assert(userBal.toString() === amount);
+    // });
     
     // Unhappy path - token is not supported
-    it('Should NOT deposit an unsupported token', async () => {
+    // it('Should NOT deposit an unsupported token', async () => {
+    //     const amount = web3.utils.toWei('100');
+    //     const TOKEN = web3.utils.fromAscii('TOKEN');
+    //     await expectRevert(
+    //         dex.deposit(TOKEN, amount, {from: accounts[1]}),
+    //         'This token is not supported.'
+    //     );
+    // });
+
+    // CLIENT WIHTDRAW:
+    // Happy path - withdraws supported token with enough balance
+    it('Should withdraw tokens', async () => {
+        await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[1]});
+        
         const amount = web3.utils.toWei('100');
-        const TOKEN = web3.utils.fromAscii('TOKEN');
-        await expectRevert(
-            dex.deposit(TOKEN, amount, {from: accounts[1]}),
-            'This token is not supported.'
-        );
+        await dex.withdraw(b32DAI, amount, {from: accounts[1]});
+        const [afterWithd, balance] = await Promise.all([
+            dex.userBalances(accounts[1], b32DAI),
+            dai.balanceOf(accounts[1])
+        ]);
+
+        assert(afterWithd.toString() === web3.utils.toWei('0'));
+        assert(balance.toString() === web3.utils.toWei('1000'));
     });
+
+    // Unhappy path - token not supported
+
+    // Unhappy path - insufficient balance
 
 });
