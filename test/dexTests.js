@@ -1,10 +1,22 @@
 const { expectRevert } = require('@openzeppelin/test-helpers');
+const { assertion } = require('@openzeppelin/test-helpers/src/expectRevert');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const Dai = artifacts.require('../contracts/Dai.sol');
 const Bat = artifacts.require('../contracts/Bat.sol');
 const Zrx = artifacts.require('../contracts/Zrx.sol');
 const Rep = artifacts.require('../contracts/Rep.sol');
 const Dex = artifacts.require('../contracts/dExch.sol');
+
+const SIDE = {
+    BUY: 0,
+    SELL: 1
+};
+
+const wait = async () => {
+    return new Promise((res, rej) => {
+        setTimeout(() => res(), 500);
+    });
+}
 
 contract("dexTest", (accounts) => {
     let dai, bat, zrx, rep, dex;
@@ -15,8 +27,8 @@ contract("dexTest", (accounts) => {
     
     beforeEach(async () => {
         
-        [dai, bat, rep, zrx, dex] = await Promise.all([
-            Dai.new(), Bat.new(), Rep.new(), Zrx.new(), Dex.new()
+        [dex, dai, bat, rep, zrx] = await Promise.all([
+            Dex.new(), Dai.new(), Bat.new(), Rep.new(), Zrx.new()
         ]);
         
         const tokenPtrs = [dai, bat, rep, zrx];
@@ -32,14 +44,14 @@ contract("dexTest", (accounts) => {
         // seed accounts with each token supported
         dexClients.map(async acc => {
             await Promise.all( 
-                tokenPtrs.map(async ptr => await ptr.faucet(acc, amounts) )
+                tokenPtrs.map(ptr => ptr.faucet(acc, amounts) )
             );
         });
 
         // approve the dex on the account owners' behalf
         dexClients.map(async acc => {
             await Promise.all( 
-                tokenPtrs.map(async ptr => await ptr.approve(dex.address, amounts, {from: acc}) )
+                tokenPtrs.map(ptr => ptr.approve(dex.address, amounts, {from: acc}) )
             );
         });
         
@@ -48,10 +60,11 @@ contract("dexTest", (accounts) => {
     // CLIENT DEPOSIT:
     // Happy path - token is supported
     // it('Should deposit a supported token', async () => {
-    //     const amount = web3.utils.toWei('100');
-    //     await dex.deposit(b32DAI, amount, {from: accounts[1]});
+    //     await wait();
+    //     const amount = web3.utils.toWei('150');
+    //     await dex.deposit(b32REP, amount, {from: accounts[1]});
         
-    //     const userBal = await dex.userBalances(accounts[1], b32DAI);
+    //     const userBal = await dex.userBalances(accounts[1], b32REP);
     //     assert(userBal.toString() === amount);
     // });
     
@@ -67,22 +80,128 @@ contract("dexTest", (accounts) => {
 
     // CLIENT WIHTDRAW:
     // Happy path - withdraws supported token with enough balance
-    it('Should withdraw tokens', async () => {
-        await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[1]});
+    // it('Should withdraw tokens', async () => {
+    //     await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[1]});
         
-        const amount = web3.utils.toWei('100');
-        await dex.withdraw(b32DAI, amount, {from: accounts[1]});
-        const [afterWithd, balance] = await Promise.all([
-            dex.userBalances(accounts[1], b32DAI),
-            dai.balanceOf(accounts[1])
-        ]);
+    //     const amount = web3.utils.toWei('100');
+    //     await dex.withdraw(b32DAI, amount, {from: accounts[1]});
+    //     const [afterWithd, balance] = await Promise.all([
+    //         dex.userBalances(accounts[1], b32DAI),
+    //         dai.balanceOf(accounts[1])
+    //     ]);
 
-        assert(afterWithd.toString() === web3.utils.toWei('0'));
-        assert(balance.toString() === web3.utils.toWei('1000'));
-    });
+    //     assert(afterWithd.toString() === web3.utils.toWei('0'));
+    //     assert(balance.toString() === web3.utils.toWei('1000'));
+    // });
 
     // Unhappy path - token not supported
+    // it('Should NOT withdraw an unsupported token', async () => {
+    //     await expectRevert(
+    //         dex.withdraw(web3.utils.fromAscii('TOKEN'), web3.utils.toWei('10'), {from: accounts[1]}),
+    //         'This token is not supported.'
+    //     );
+    // });
 
     // Unhappy path - insufficient balance
+    // it('Should NOT withdraw for insufficient balance', async () => {
+    //     await dex.deposit(b32DAI, web3.utils.toWei('10'), {from: accounts[1]});
+
+    //     await expectRevert(
+    //         dex.withdraw(b32DAI, web3.utils.toWei('100'), {from: accounts[1]}),
+    //         'Insufficient token balance'
+    //     );
+    // });
+
+    // LIMIT ORDER FUNCTIONALITY
+    // Happy path - token supported, enough balance for trade, not in DAI
+    it('Should create a limit order', async () => {
+        await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[1]});
+        await dex.createLimitOrder(0, b32BAT, web3.utils.toWei('10'), 2, {from: accounts[1]});
+
+        let orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
+        let orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
+        
+        console.log("orderbook length: ", orderBookB.length);
+        console.log("order 0 id: ", orderBookB[0].id);
+        console.log("order 0 user: ", orderBookB[0].creator);
+        console.log("order 0 price: ", orderBookB[0].price.toString());
+        
+        // assert(orderBookB.length === 1);
+        // assert(orderBookB[0].id == 0);
+        // assert(orderBookB[0].creator === accounts[1]);
+        // assert(orderBookB[0].side == 0);
+        // assert(orderBookB[0].ticker === web3.utils.padRight(b32BAT, 64));
+        // assert(orderBookB[0].price.toString() === web3.utils.toWei('10'));
+        // assert(orderBookB[0].qty == 2);
+        // // assert(orderBookB[0].date === );
+        // assert(orderBookB[0].remaining === orderBookB[0].qty);
+        // assert(orderBookB[0].isFilled === false);
+        
+        
+        // SECOND LIMIT ORDER
+        await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[2]});
+        await dex.createLimitOrder(0, b32BAT, web3.utils.toWei('11'), 1, {from: accounts[2]});
+        
+        orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
+        orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
+        
+        console.log("orderbook length: ", orderBookB.length);
+        console.log("order 0 id: ", orderBookB[0].id);
+        console.log("order 0 user: ", orderBookB[0].creator);
+        console.log("order 0 price: ", orderBookB[0].price.toString());
+
+        // assert(orderBookB.length === 2);
+        // assert(orderBookB[0].id == 1);
+        // assert(orderBookB[0].creator === accounts[2]);
+        // assert(orderBookB[0].price.toString() === web3.utils.toWei('11'));
+        // assert(orderBookB[0].qty == 1);
+        // assert(orderBookB[1].creator === accounts[1]);
+        
+        
+        // THIRD LIMIT ORDER
+        await dex.deposit(b32DAI, web3.utils.toWei('100'), {from: accounts[2]});
+        await dex.createLimitOrder(0, b32BAT, web3.utils.toWei('12'), 2, {from: accounts[1]});
+        
+        orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
+        orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
+        
+        console.log("orderbook length: ", orderBookB.length);
+        console.log("order 0 id: ", orderBookB[0].id);
+        console.log("order 0 user: ", orderBookB[0].creator);
+        console.log("order 0 price: ", orderBookB[0].price.toString());
+
+        // assert(orderBookB.length === 3);
+        // assert(orderBookB[0].id == 2);
+        // assert(orderBookB[0].creator === accounts[1]);
+        // assert(orderBookB[0].price.toString() === web3.utils.toWei('12'));
+        // assert(orderBookB[0].qty == 2);
+        // assert(orderBookB[1].creator === accounts[2]);
+        // assert(orderBookB[1].price.toString() === web3.utils.toWei('11'));
+        // assert(orderBookB[2].creator === accounts[1]);
+        // assert(orderBookB[2].price.toString() === web3.utils.toWei('10'));
+
+        assert(orderBookS.length === 0);
+    });
+
+    it('Should NOT create a limit order: invalid sell', async () => {
+        const amount = web3.utils.toWei('100');
+        
+        await expectRevert(
+            dex.createLimitOrder(1, b32BAT, web3.utils.toWei('2'), 5, {from: accounts[1]})
+            , "Insufficient token balance");
+    });
+
+    it('Should NOT create a limit order: invalid buy', async () => {
+        const amount = web3.utils.toWei('100');
+
+        await dex.deposit(b32DAI, amount, {from: accounts[1]});
+        
+        await expectRevert(
+            dex.createLimitOrder(0, b32BAT, web3.utils.toWei('12'), 10, {from: accounts[1]})
+            , "Insufficient DAI balance");
+    });
+
+
+    // MARKET ORDER FUNCTIONALITY
 
 });

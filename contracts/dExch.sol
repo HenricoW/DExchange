@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
 
 import './IERC20.sol';
 import './SafeMath.sol';
@@ -17,6 +18,8 @@ contract dExch {
     bytes32 constant DAI = bytes32('DAI');              // Quote currency of the exchange
     address public admin;
 
+    // order properties
+
     // token properties
     struct Token { bytes32 ticker; address tokenAddr; }
     bytes32[] public tokenList;
@@ -25,7 +28,7 @@ contract dExch {
     // user properties
     mapping(address => mapping(bytes32 => uint)) public userBalances;           // usrAddr => ticker => balance
     // mapping(address => Order[]) public userOrders;                              // EXTRA: mapping of user open orders
-    mapping(bytes32 => mapping(Side => Order[])) public orderBooks;             // ticker => Side => OrderArray
+    mapping(bytes32 => mapping(uint => Order[])) public orderBooks;             // ticker => Side => OrderArray
     uint public nextOrderId;                                                    // for next unique order id
     uint public nextTradeId;                                                    // for next unique trade id
 
@@ -59,7 +62,7 @@ contract dExch {
     /*
     *   Main contract body
     */
-    constructor() {
+    constructor() public {
         admin = msg.sender;
     }
 
@@ -96,31 +99,29 @@ contract dExch {
     }
 
     // user: createLimitOrder
-    function createLimitOrder(Side side, bytes32 ticker, uint price, uint amount) external tokenExists(ticker) notQuoteTkn(ticker) {
+    function createLimitOrder(Side side, bytes32 ticker, uint price, uint _amount) external tokenExists(ticker) notQuoteTkn(ticker) {
         
         // check necessary balance: buy (DAI) or sell (ticker)
         if(side == Side.BUY) { 
-            require(userBalances[msg.sender][DAI] >= amount * price, 'Insufficient DAI balance');
+            require(userBalances[msg.sender][DAI] >= _amount * price, 'Insufficient DAI balance');
         } else {
-            require(userBalances[msg.sender][ticker] >= amount, 'Insufficient token balance');
+            require(userBalances[msg.sender][ticker] >= _amount, 'Insufficient token balance');
         }
 
-        // create the order
-        Order memory order = Order( nextOrderId, msg.sender, side, ticker, price, amount, block.timestamp, amount, false );
-
         // push the order to relevant order array
-        Order[] storage oBook = orderBooks[ticker][side];
-        oBook.push(order);
+        Order[] storage oBook = orderBooks[ticker][uint(side)];
+        oBook.push(Order( nextOrderId, msg.sender, side, ticker, price, _amount, block.timestamp, _amount, false ));
 
         // EXTRA - separate sort as fn so it can be updated:
         Utils.sort(oBook, side);
+        orderBooks[ticker][uint(side)] = oBook;
 
         nextOrderId++;
     }
 
     // view the order book
     function viewOrderBook(bytes32 _ticker, Side _side) external view returns(Order[] memory){
-        return orderBooks[_ticker][_side];
+        return orderBooks[_ticker][uint(_side)];
     }
 
     // create market order (ticker, side, amount, price)
@@ -132,13 +133,13 @@ contract dExch {
         }
 
         // get order book for opposite side (storage to use pop() later)
-        Order[] storage oBook = orderBooks[ticker][(side == Side.SELL) ? Side.BUY : Side.SELL];
+        Order[] storage oBook = orderBooks[ticker][uint((side == Side.SELL) ? Side.BUY : Side.SELL)];
 
         // loop through order book to match orders
         matchOrders(oBook, amount, side, ticker);
 
         // Loop through order book => remove filled orders & commit order book back to main storage
-        removeFilledOrders(oBook);
+        Utils.removeFilledOrders(oBook);
 
     }
 
@@ -156,22 +157,7 @@ contract dExch {
             _amount -= fillAmount;
 
             // update user balances
-            if(_side == Side.BUY) {
-                require(userBalances[msg.sender][DAI] >= DAIamount, 'Insufficient DAI balance');
-                // ticker records
-                userBalances[_oBook[i].creator][_ticker] -= fillAmount;
-                userBalances[msg.sender][_ticker] += fillAmount;
-                // DAI records
-                userBalances[_oBook[i].creator][DAI] += DAIamount;
-                userBalances[msg.sender][DAI] -= DAIamount;
-            } else {
-                // ticker records
-                userBalances[_oBook[i].creator][_ticker] += fillAmount;
-                userBalances[msg.sender][_ticker] -= fillAmount;
-                // DAI records
-                userBalances[_oBook[i].creator][DAI] -= DAIamount;
-                userBalances[msg.sender][DAI] += DAIamount;
-            }
+            Utils.updateUserBals(userBalances, _oBook, i, _ticker, DAIamount, fillAmount, _side);
 
             if(_oBook[i].remaining == 0) _oBook[i].isFilled = true;
 
@@ -187,17 +173,6 @@ contract dExch {
             nextTradeId++;
 
             i++;
-        }
-    }
-
-    function removeFilledOrders(Order[] storage _oBook) internal {
-        uint j = 0;
-        while(j < _oBook.length && _oBook[j].isFilled){
-            for(uint k = j; k < _oBook.length - 1; k++){
-                _oBook[k] = _oBook[k + 1];
-            }
-            _oBook.pop();
-            j++;
         }
     }
     
