@@ -81,6 +81,15 @@ contract dExch {
         return tokens;
     }
 
+    // get token list
+    function getTokens() external view returns (Token[] memory) {
+        Token[] memory tokenArray = new Token[](tokenList.length);
+        for(uint8 i; i < tokenList.length; i++){
+            tokenArray[i] = tokenDetails[tokenList[i]];
+        }
+        return tokenArray;
+    }
+
     // user: deposit (ticker, amount) - use transferFrom(user, self, amount) -> usr will have to apporve contract, IERC20.sol on ticker addr
     function deposit(bytes32 ticker, uint amount) external tokenExists(ticker) {
         IERC20 _tkn = IERC20(tokenDetails[ticker].tokenAddr);
