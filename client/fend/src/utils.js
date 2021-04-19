@@ -1,10 +1,10 @@
 import Web3 from 'web3';
-import dExch from '../../../build/contracts/dExch.json';
+import dExch from './contracts/dExch.json';
 import ERC20Abi from './ERC20Abi.json';
 
 const getWeb3 = async () => {
     return new Promise((resolve, reject) => {
-        window.addEventListener("load", () => {
+        window.addEventListener("load", async () => {
             // MM detection
             if(window.ethereum){
                 const web3 = new Web3(window.ethereum);
@@ -41,7 +41,7 @@ const getContracts = async (web3Inst) => {
     // get pointer to relevant deployment of contract
     const dex = new web3Inst.eth.Contract(
         dExch.abi,
-        deployedInstance && deployedInstance.address                      // equivalent to: if(deployedInstance) { deployedInstance.address }
+        deployedInstance.address                      // equivalent to: if(deployedInstance) { deployedInstance.address }
     );
 
     // get access to relevant token contracts
