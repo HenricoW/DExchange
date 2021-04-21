@@ -21,19 +21,11 @@ const LoadingComponent = () => {
         init();
     }, []);
 
-    const isReady = () => (
-        (typeof web3 !== undefined) &&
-        (typeof contracts !== undefined) &&
-        (typeof accounts !== undefined)
-    );
-
-    if(!isReady()){
-        console.log("in Loading section");
-        return (<div><h3>Loadding.......</h3></div>);
+    if( (web3 === undefined) || (contracts === undefined) || (accounts === undefined) ){
+        return (<div><h3>Loading.......</h3></div>);
+    } else {
+        return  (<App web3={web3} contracts={contracts} accounts={accounts} />);
     }
-    
-    console.log("in App section");
-    return  (<App />);
 }
 
 export default LoadingComponent;

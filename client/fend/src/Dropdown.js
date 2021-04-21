@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Dropdown = ({onSelect, activeItem, items}) => {
+const Dropdown = ({items, activeItem, onSelect}) => {
 
     const [dropdownVisible, setDropDownVisible] = useState(false);
 
@@ -8,11 +8,11 @@ const Dropdown = ({onSelect, activeItem, items}) => {
         e.preventDefault();
         setDropDownVisible(!dropdownVisible);
         onSelect(item);
-    } 
+    }
 
     return (
         <div className="dropdown ml-3">
-            <button className="btn btn-secondary dropdown-toggle" type="button" onClick={() => setDropDownVisible(!dropdownVisible)}>
+            <button className="btn btn-secondary dropdown-toggle" type="button" onClick={() => setDropDownVisible(!dropdownVisible)} >
                 {activeItem.label}
             </button>
             <div className={`dropdown-menu ${dropdownVisible ? "visible" : ""}`}>

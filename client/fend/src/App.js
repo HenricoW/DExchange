@@ -1,32 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Footer from './Footer.js';
-import Dropdown from "./Dropdown";
-
-const itemsInit = [
-  {
-    label: "hello",
-  },
-  {
-    label: "there",
-  },
-  {
-    label: "smokeshow",
-  }
-];
+import Header from "./Header";
 
 
-function App() {
-  const [items, setItems] = useState(itemsInit);
-  const [selectedItem, setSelectedItem] = useState(items[0]);
+function App({ web3, contracts, accounts }) {
+  useEffect(() => {
+    const init = async () => {
+      const rawTokens = await contracts.dex.methods.getTokens().call();
   
-  const onSelect = item => setSelectedItem(item);
+      setTokens(rawTokens);
+      setUser({
+        accounts,
+        selectedToken: rawTokens[0]
+      });
+    }
+
+    init();
+
+  }, []);
+
+  const [tokens, setTokens] = useState(undefined);
+  const [user, setUser] = useState({
+    accounts: [],
+    selectedToken: undefined
+  });
+  
+  const onSelect = item => {
+    setUser({
+      ...user,
+      selectedToken: item.value
+    });
+  }
+
+  if(tokens === undefined || user.selectedToken === undefined || contracts === undefined) return <div>Loading...</div>
 
   return (
     <div id="app">
-     <div>
-       Header
-      </div>
-      <Dropdown onSelect={onSelect} activeItem={selectedItem} items={items} />
+      <Header dex={contracts.dex} user={user} tokens={tokens} onSelect={onSelect} web3={web3} />
       <div>
         Main part
       </div>
