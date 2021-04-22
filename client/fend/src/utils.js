@@ -53,11 +53,11 @@ const getContracts = async (web3Inst) => {
             ...acc,
             [web3Inst.utils.hexToUtf8(tkn.ticker)]: new web3Inst.eth.Contract(
                 ERC20Abi,
-                tkn.address
+                tkn.tokenAddr
             )
         }
     ), {});
-    
+   
     return { dex, ...contractList }
 }
 

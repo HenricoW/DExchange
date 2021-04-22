@@ -4,10 +4,10 @@ const Dropdown = ({items, activeItem, onSelect}) => {
 
     const [dropdownVisible, setDropDownVisible] = useState(false);
 
-    const selectItem = (e, item) => {
+    const selectItem = async (e, item) => { 
         e.preventDefault();
         setDropDownVisible(!dropdownVisible);
-        onSelect(item);
+        await onSelect(item);
     }
 
     return (
@@ -21,7 +21,7 @@ const Dropdown = ({items, activeItem, onSelect}) => {
                         className={`dropdown-item ${item.label === activeItem.label ? "active" : ""}`} 
                         href="#" 
                         key={idx}
-                        onClick={e => selectItem(e, item)}
+                        onClick={async e => await selectItem(e, item)}
                         >
                             {item.label}
                     </a>
