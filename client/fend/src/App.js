@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Footer from './Footer.js';
 import Header from "./Header";
 import Wallet from "./Wallet.js";
-
+import NewOrder from "./NewOrder";
 
 function App({ web3, contracts, accounts }) {
   const [tokens, setTokens] = useState(undefined);
@@ -54,7 +54,6 @@ function App({ web3, contracts, accounts }) {
     setBalances({ tokenDex: dexBal, tokenWallet: wallBal });
   }
 
-  // deposit fn
   const deposit = async amount => {
     const tickerText = web3.utils.hexToUtf8(user.selectedToken.ticker);
     await contracts[tickerText].methods.approve(contracts.dex.options.address, amount).send({from: user.accounts[0]});
@@ -62,11 +61,18 @@ function App({ web3, contracts, accounts }) {
     await updateBalances(user.accounts[0], user.selectedToken);
   }
   
-  // withdraw fn
   const withdraw = async amount => {
     const tickerText = web3.utils.hexToUtf8(user.selectedToken.ticker);
     await contracts.dex.methods.withdraw(user.selectedToken.ticker, amount).send({from: user.accounts[0]});
     await updateBalances(user.accounts[0], user.selectedToken);
+  }
+
+  const createMarketOrder = async (side, amount) => {
+    await contracts.dex.methods.createMarketOrder(user.selectedToken.ticker, side, amount).send({from: accounts[0]});
+  }
+
+  const createLimitOrder = async (side, amount, price) => {
+    await contracts.dex.methods.createLimitOrder(side, user.selectedToken.ticker, amount, price).send({from: accounts[0]});
   }
 
   if(tokens === undefined || user.selectedToken === undefined || contracts === undefined) return <div>Loading...</div>
@@ -80,6 +86,12 @@ function App({ web3, contracts, accounts }) {
             <Wallet 
               user={user} deposit={deposit} withdraw={withdraw} web3={web3} balances={balances}
             />
+            {(web3.utils.hexToUtf8(user.selectedToken.ticker) === 'DAI') ? null : 
+              <NewOrder 
+                createLimitOrder={createLimitOrder}
+                createMarketOrder={createMarketOrder}
+              />
+            }
           </div>
         </div>
       </main>
