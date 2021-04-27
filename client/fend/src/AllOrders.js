@@ -2,7 +2,6 @@ import React from 'react';
 import Moment from 'react-moment';
 
 const AllOrders = ({ orders }) => {
-    // console.log(orders);
     const renderList = (orderList, side, className) => {
         return (
           <>
@@ -23,8 +22,6 @@ const AllOrders = ({ orders }) => {
                     <td>{order.remaining}</td>
                     <td>{order.price}</td>
                     <td>
-                    {/* {console.log("All orders:")}
-                    {console.log(order.date)} */}
                       <Moment fromNow>{parseInt(order.date) * 1000}</Moment>
                     </td>
                   </tr>

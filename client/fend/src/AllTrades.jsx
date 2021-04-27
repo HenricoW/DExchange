@@ -2,10 +2,8 @@ import React from 'react';
 import Moment from 'react-moment';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-let count = 1;
 const AllTrades = ({ trades }) => {
     const renderList = (trades, className) => {
-        count++;
         return (
             <>
               <table className={`table table-striped trade-list mb-0 ${className}`}>
@@ -18,12 +16,10 @@ const AllTrades = ({ trades }) => {
                 </thead>
                 <tbody>
                   {trades.map((trade) => (
-                    <tr key={trade.tradeId+count}>
+                    <tr key={trade.tradeId}>
                       <td>{trade.amount}</td>
                       <td>{trade.price}</td>
                       <td>
-                        {/* {console.log("All trades:")}
-                        {console.log(trade.date)} */}
                         <Moment fromNow>{parseInt(trade.timestamp) * 1000}</Moment>
                       </td>
                     </tr>
@@ -34,19 +30,20 @@ const AllTrades = ({ trades }) => {
         );
     }
 
-    const renderChart = (trades) => {
+    const renderChart = trades => {
+        console.log(trades);
         return (
-          <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={trades}>
-            <Line type="monotone" dataKey="price" stroke="#741cd7" />
-            <CartesianGrid stroke="#000000" />
-            <XAxis dataKey="date" tickFormatter={dateStr => {
-              const date = new Date(parseInt(dateStr) * 1000); 
-              return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-            }} />
-            <YAxis dataKey="price" />
-          </LineChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trades}>
+                <Line type="monotone" dataKey="price" stroke="#741cd7" />
+                <CartesianGrid stroke="#000000" />
+                <XAxis dataKey="timestamp" tickFormatter={dateStr => {
+                const date = new Date(parseInt(dateStr) * 1000); 
+                return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+                }} />
+                <YAxis dataKey="price" />
+            </LineChart>
+            </ResponsiveContainer> 
         );
     }
       

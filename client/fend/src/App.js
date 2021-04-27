@@ -58,32 +58,25 @@ function App({ web3, contracts, accounts }) {
     const init = async () => {
       setTrades([]);
       if(user.selectedToken === undefined) return
-      getTrades(user.selectedToken);
+      fetchTrades(user.selectedToken);
     }
 
     init();
   }, [user.selectedToken],
-   () => {
-      listener.unsubscribe();                                       // when exactly will this be fired? Why not before new getTrades() call?
-    }
+   () => listener.unsubscribe()                                         // when exactly will this be fired? Why not before new fetchTrades() call?
   );
 
   const setTrades = trade => {
     let nuTrades = tradesRef.current;
 
-    if(trade.length === 0){
-      tradesRef.current = [];
-      _setTrades([]);
-    } else {
-      nuTrades.push(trade);
-      tradesRef.current = nuTrades;
-      _setTrades(nuTrades);
-    }
+    trade.length === 0 ? nuTrades = [] : nuTrades.push(trade)
+    tradesRef.current = nuTrades;
+    _setTrades(nuTrades);
   }
 
-  const getTrades = async theToken => {
+  const fetchTrades = async theToken => {
     let tradeIds = new Set();
-    console.log("getTrades fired");
+    console.log("fetchTrades fired");
     const _listener = contracts.dex.events.tradeExecuted({
       filter: { ticker: theToken.ticker },                        // filter only works on indexed fields in the event !!
       fromBlock: 0                                                // INEFFICIENT for production OR testnet !!!!
