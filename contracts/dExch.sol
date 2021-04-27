@@ -36,7 +36,7 @@ contract dExch {
     event tradeExecuted(
         uint tradeId,
         uint orderId,
-        bytes32 ticker,
+        bytes32 indexed ticker,
         Side side,
         uint price,
         uint amount,

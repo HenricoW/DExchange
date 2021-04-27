@@ -24,7 +24,7 @@ const NewOrder = ({ createLimitOrder, createMarketOrder }) => {
         if(order.type === TYPE.MARKET){
             createMarketOrder(order.side, order.amount);
         } else {
-            createLimitOrder(order.side, order.amount, order.price);
+            createLimitOrder(order.side, order.price, order.amount);
         }
     }
 
