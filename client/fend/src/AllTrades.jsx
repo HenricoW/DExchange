@@ -1,50 +1,33 @@
 import React from 'react';
 import Moment from 'react-moment';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
+import RenderChart from './RenderChart';
 
 const AllTrades = ({ trades }) => {
     const renderList = (trades, className) => {
-        return (
-            <>
-              <table className={`table table-striped trade-list mb-0 ${className}`}>
-                <thead>
-                  <tr>
-                    <th>amount</th>
-                    <th>price</th>
-                    <th>date</th>
+      return (
+          <>
+            <table className={`table table-striped trade-list mb-0 ${className}`}>
+              <thead>
+                <tr>
+                  <th>amount</th>
+                  <th>price</th>
+                  <th>date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trades.map((trade) => (
+                  <tr key={trade.tradeId}>
+                    <td>{trade.amount}</td>
+                    <td>{trade.price}</td>
+                    <td>
+                      <Moment fromNow>{parseInt(trade.timestamp) * 1000}</Moment>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {trades.map((trade) => (
-                    <tr key={trade.tradeId}>
-                      <td>{trade.amount}</td>
-                      <td>{trade.price}</td>
-                      <td>
-                        <Moment fromNow>{parseInt(trade.timestamp) * 1000}</Moment>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-        );
-    }
-
-    const renderChart = trades => {
-        console.log(trades);
-        return (
-            <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={trades}>
-                <Line type="monotone" dataKey="price" stroke="#741cd7" />
-                <CartesianGrid stroke="#000000" />
-                <XAxis dataKey="timestamp" tickFormatter={dateStr => {
-                const date = new Date(parseInt(dateStr) * 1000); 
-                return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-                }} />
-                <YAxis dataKey="price" />
-            </LineChart>
-            </ResponsiveContainer> 
-        );
+                ))}
+              </tbody>
+            </table>
+          </>
+      );
     }
       
     return (
@@ -52,7 +35,7 @@ const AllTrades = ({ trades }) => {
         <h2 className="card-title">All trades</h2>
         <div className="row">
             <div className="col-sm-12">
-            {renderChart(trades)}
+            <RenderChart trades={trades} />
             {renderList(trades, 'trade-list')}
             </div>
         </div>
