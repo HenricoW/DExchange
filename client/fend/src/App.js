@@ -37,7 +37,7 @@ function App({ web3, contracts, accounts }) {
       const tickerText = web3.utils.hexToUtf8(rawTokens[0].ticker);
       const wallBal = await contracts[tickerText].methods.balanceOf(accounts[0]).call();
       await getOrders(rawTokens[0]);
-      setTrades([]);
+      await fetchTrades(rawTokens[0]);
   
       setTokens(rawTokens);
       setUser({
@@ -132,6 +132,7 @@ function App({ web3, contracts, accounts }) {
   const createMarketOrder = async (side, amount) => {
     await contracts.dex.methods.createMarketOrder(user.selectedToken.ticker, side, amount).send({from: accounts[0]});
     await getOrders(user.selectedToken);
+    await fetchTrades(user.selectedToken);
   }
 
   const createLimitOrder = async (side, amount, price) => {
