@@ -5,7 +5,7 @@ const Header = ({ dex, user, tokens, onSelect, web3 }) => {
     return (
         <header id="header" className="card">
             <div className="row">
-                <div className="col-sm-3 flex">
+                <div className="col-sm-2 flex">
                     <Dropdown 
                         items={tokens.map(item => ({
                             label: web3.utils.hexToUtf8(item.ticker),
@@ -19,9 +19,10 @@ const Header = ({ dex, user, tokens, onSelect, web3 }) => {
 
                         onSelect={onSelect}
                     />
-                </div>
-                <div className="col-sm-9">
-                    <h4>Dex - <span className="contract-addr">Contract Address: <span className="address">{dex.options.address}</span></span> </h4>
+                </div> 
+                <div className="col-sm-10s">
+                    <h4>Ash Exchange</h4>
+                    <h6><span className="contract-addr">Address: <span className="address">{dex.options.address}</span></span> </h6>
                 </div>
             </div>
         </header>
