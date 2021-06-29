@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { getWeb3, getContracts } from './utils';
-import App from './App';
+import React, { useState, useEffect } from "react";
+import { getWeb3, getContracts } from "./utils";
+import App from "./App";
 
 const LoadingComponent = () => {
-
     const [web3, setWeb3] = useState(undefined);
     const [contracts, setContracts] = useState(undefined);
     const [accounts, setAccounts] = useState(undefined);
@@ -16,16 +15,20 @@ const LoadingComponent = () => {
             setWeb3(WEB3);
             setContracts(CONTR);
             setAccounts(ACCS);
-        }
+
+            window.ethereum.on("accountsChanged", (accs) => handleAccChg(accs));
+        };
 
         init();
     }, []);
 
-    if( (web3 === undefined) || (contracts === undefined) || (accounts === undefined) ){
-        return (<div><h3>Loading.......</h3></div>);
-    } else {
-        return  (<App web3={web3} contracts={contracts} accounts={accounts} />);
-    }
-}
+    const handleAccChg = (accs) => (accs.length === 0 ? console.log("Please connect to MetaMask") : setAccounts(accs));
+
+    return web3 === undefined || contracts === undefined || accounts === undefined ? (
+        <h3>Loading.......</h3>
+    ) : (
+        <App web3={web3} contracts={contracts} accounts={accounts} />
+    );
+};
 
 export default LoadingComponent;
