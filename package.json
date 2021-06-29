@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/HenricoW/DExchange#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.2.0",
-    "@openzeppelin/test-helpers": "^0.5.10"
+    "@openzeppelin/contracts": "^3.2.0"
+  },
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "^1.4.1"
   }
 }
