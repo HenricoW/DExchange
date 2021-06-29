@@ -45,17 +45,17 @@ contract dExch {
 
     // modifiers
     modifier onlyAdmin() {
-        require(msg.sender == admin, "You are not authorized to do this transaction.");
+        require(msg.sender == admin, "dExch: You are not authorized to do this transaction.");
         _;
     }
 
     modifier tokenExists(bytes32 ticker) {
-        require(tokenDetails[ticker].tokenAddr != address(0), "This token is not supported.");
+        require(tokenDetails[ticker].tokenAddr != address(0), "dExch: This token is not supported");
         _;
     }
 
     modifier notQuoteTkn(bytes32 ticker) {
-        require(ticker != DAI, "Cannot trade DAI");
+        require(ticker != DAI, "dExch: Cannot trade DAI");
         _;
     }
 
@@ -100,7 +100,7 @@ contract dExch {
 
     // user: withdraw (ticker, amount) - only if suffic balance - use transfer fn, IERC20.sol on ticker addr
     function withdraw(bytes32 ticker, uint amount) external tokenExists(ticker) {
-        require(userBalances[msg.sender][ticker] >= amount, 'Insufficient token balance');
+        require(userBalances[msg.sender][ticker] >= amount, 'dExch (withdraw): Insufficient token balance');
         IERC20 _tkn = IERC20(tokenDetails[ticker].tokenAddr);
         userBalances[msg.sender][ticker] -= amount;
 
@@ -112,9 +112,9 @@ contract dExch {
         
         // check necessary balance: buy (DAI) or sell (ticker)
         if(side == Side.BUY) { 
-            require(userBalances[msg.sender][DAI] >= _amount * price, 'Insufficient DAI balance');
+            require(userBalances[msg.sender][DAI] >= _amount * price, 'dExch (createLimitOrder): Insufficient DAI balance');
         } else {
-            require(userBalances[msg.sender][ticker] >= _amount, 'Insufficient token balance');
+            require(userBalances[msg.sender][ticker] >= _amount, 'dExch (createLimitOrder): Insufficient token balance');
         }
 
         // push the order to relevant order array
@@ -138,7 +138,7 @@ contract dExch {
 
         // check necessary balance: sell (ticker)
         if(side == Side.SELL) { 
-            require(userBalances[msg.sender][ticker] >= amount, 'Insufficient token balance');
+            require(userBalances[msg.sender][ticker] >= amount, 'dExch (createMarketOrder): Insufficient token balance');
         }
 
         // get order book for opposite side (storage to use pop() later)
