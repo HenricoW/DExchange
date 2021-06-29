@@ -1,86 +1,114 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 const DIRECTION = {
-    DEPOSIT: 'DEPOSIT',
-    WITHDRAW: 'WITHDRAW' 
-}
+    DEPOSIT: "DEPOSIT",
+    WITHDRAW: "WITHDRAW",
+};
 
-const Wallet = ({ user, deposit, withdraw, web3, balances }) => {
+const Wallet = ({ user, deposit, withdraw, web3, balances, updateBalances }) => {
     const [direction, setDirection] = useState(DIRECTION.DEPOSIT);
     const [amount, setAmount] = useState(0);
+    const [bals, setBals] = useState(undefined);
 
-    const onSubmit = e => {
+    useEffect(() => {
+        setBals(balances);
+    }, [balances]);
+
+    const onSubmit = (e) => {
         e.preventDefault();
-        direction === DIRECTION.DEPOSIT ? deposit(amount) : withdraw(amount)
-    }
+        const weiAmount = web3.utils.toWei(amount);
+        direction === DIRECTION.DEPOSIT ? deposit(weiAmount) : withdraw(weiAmount);
+        // updateBalances(user.accounts[0], user.selectedToken)
+    };
 
     return (
         <div id="wallet" className="card">
             <h2 className="card-title">Wallet</h2>
             <h3>Token balance for {web3.utils.hexToUtf8(user.selectedToken.ticker)}</h3>
             <div className="form-group row">
-                <label htmlFor="wallet" className="col-sm-4 col-form-label">Wallet</label>
+                <label htmlFor="wallet" className="col-sm-4 col-form-label">
+                    Wallet
+                </label>
                 <div className="col-sm-8">
-                <input 
-                    className="form-control" 
-                    id="wallet" 
-                    disabled 
-                    value={balances.tokenWallet}
-                />
+                    {bals && (
+                        <input
+                            className="form-control"
+                            id="wallet"
+                            disabled
+                            value={web3.utils.fromWei(bals.tokenWallet.toString())}
+                        />
+                    )}
                 </div>
             </div>
             <div className="form-group row">
-                <label htmlFor="contract" className="col-sm-4 col-form-label">Dex</label>
+                <label htmlFor="contract" className="col-sm-4 col-form-label">
+                    Dex
+                </label>
                 <div className="col-sm-8">
-                <input 
-                    className="form-control" 
-                    id="wallet" 
-                    disabled 
-                    value={balances.tokenDex}
-                />
+                    {bals && (
+                        <input
+                            className="form-control"
+                            id="wallet"
+                            disabled
+                            value={web3.utils.fromWei(bals.tokenDex.toString())}
+                        />
+                    )}
                 </div>
             </div>
             <h3>Transfer {web3.utils.hexToUtf8(user.selectedToken.ticker)}</h3>
             <form id="transfer" onSubmit={(e) => onSubmit(e)}>
+                {/* direction radio */}
                 <div className="form-group row">
-                <label htmlFor="direction" className="col-sm-4 col-form-label">Direction</label>
-                <div className="col-sm-8">
-                    <div id="direction" className="btn-group" role="group">
-                    <button 
-                        type="button" 
-                        className={`btn btn-secondary ${direction === DIRECTION.DEPOSIT ? 'active' : ''}`}
-                        onClick={() => setDirection(DIRECTION.DEPOSIT)}
-                    >Deposit</button>
-                    <button 
-                        type="button" 
-                        className={`btn btn-secondary ${direction === DIRECTION.WITHDRAW ? 'active' : ''}`}
-                        onClick={() => setDirection(DIRECTION.WITHDRAW)}
-                    >Withdraw</button>
+                    <label htmlFor="direction" className="col-sm-4 col-form-label">
+                        Direction
+                    </label>
+                    <div className="col-sm-8">
+                        <div id="direction" className="btn-group" role="group">
+                            <button
+                                type="button"
+                                className={`btn btn-secondary ${direction === DIRECTION.DEPOSIT ? "active" : ""}`}
+                                onClick={() => setDirection(DIRECTION.DEPOSIT)}
+                            >
+                                Deposit
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn btn-secondary ${direction === DIRECTION.WITHDRAW ? "active" : ""}`}
+                                onClick={() => setDirection(DIRECTION.WITHDRAW)}
+                            >
+                                Withdraw
+                            </button>
+                        </div>
                     </div>
-                </div>
                 </div>
                 <div className="form-group row">
-                <label htmlFor="amount" className="col-sm-4 col-form-label">Amount</label>
-                <div className="col-sm-8">
-                    <div className="input-group mb-3">
-                    <input 
-                        id="amount" 
-                        type="text" 
-                        className="form-control" 
-                        onChange={(e) => setAmount(e.target.value)}
-                    />
-                    <div className="input-group-append">
-                        <span className="input-group-text">{web3.utils.hexToUtf8(user.selectedToken.ticker)}</span>
+                    <label htmlFor="amount" className="col-sm-4 col-form-label">
+                        Amount
+                    </label>
+                    <div className="col-sm-8">
+                        <div className="input-group mb-3">
+                            <input
+                                id="amount"
+                                type="text"
+                                className="form-control"
+                                onChange={(e) => setAmount(e.target.value)}
+                            />
+                            <div className="input-group-append">
+                                <span className="input-group-text">
+                                    {web3.utils.hexToUtf8(user.selectedToken.ticker)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    </div>
-                </div>
                 </div>
                 <div className="text-right">
-                <button type="submit" className="btn btn-primary">Submit</button>
+                    <button type="submit" className="btn btn-primary">
+                        Submit
+                    </button>
                 </div>
             </form>
         </div>
-    )
-}
+    );
+};
 
-export default Wallet
+export default Wallet;
