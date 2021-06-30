@@ -1,7 +1,7 @@
 import React from "react";
 import Moment from "react-moment";
 
-const AllOrders = ({ orders, web3 }) => {
+const AllOrders = ({ orders, displayVal }) => {
     const renderList = (orderList, side, className) => {
         return (
             <>
@@ -19,7 +19,7 @@ const AllOrders = ({ orders, web3 }) => {
                     <tbody>
                         {orderList.map((order) => (
                             <tr key={order.id}>
-                                <td>{web3.utils.fromWei(order.remaining)}</td>
+                                <td>{displayVal(order.remaining)}</td>
                                 <td>{order.price}</td>
                                 <td>
                                     <Moment fromNow>{parseInt(order.date) * 1000}</Moment>

@@ -135,8 +135,24 @@ function App({ web3, contracts, accounts }) {
         await updateBalances(user.accounts[0], user.selectedToken);
     };
 
+    const sixDigits = ["USDC", "USDT"];
+    const displayVal = (val) => {
+        const tickerStr = web3.utils.hexToUtf8(user.selectedToken.ticker);
+        const sixDigVal = web3.utils.fromWei(val.toString(), "picoether");
+        const stdDigVal = web3.utils.fromWei(val.toString());
+        return sixDigits.includes(tickerStr) ? sixDigVal : stdDigVal;
+    };
+
+    const weiVal = (val) => {
+        const tickerStr = web3.utils.hexToUtf8(user.selectedToken.ticker);
+        val = Number(val) * 1000;
+        const sixDigVal = web3.utils.toWei(val.toString(), "kwei");
+        const stdDigVal = web3.utils.toWei(val.toString(), "milli");
+        return sixDigits.includes(tickerStr) ? sixDigVal : stdDigVal;
+    };
+
     const createMarketOrder = async (side, amount) => {
-        const weiAmount = web3.utils.toWei(amount);
+        const weiAmount = weiVal(amount);
         await contracts.dex.methods
             .createMarketOrder(user.selectedToken.ticker, side, weiAmount)
             .send({ from: accounts[0] });
@@ -145,8 +161,12 @@ function App({ web3, contracts, accounts }) {
         await updateBalances(user.accounts[0], user.selectedToken);
     };
 
+    const priceValueDigits = 6;
     const createLimitOrder = async (side, amount, price) => {
-        const weiAmount = web3.utils.toWei(amount);
+        const weiAmount = weiVal(amount);
+        // price = web3.utils.toBN(Number(price) * Math.pow(10, priceValueDigits));
+        // price = price.div(web3.utils.toBN(Math.pow(10, priceValueDigits)));
+        // console.log(price);
         await contracts.dex.methods
             .createLimitOrder(side, user.selectedToken.ticker, price, weiAmount)
             .send({ from: accounts[0] });
@@ -166,17 +186,18 @@ function App({ web3, contracts, accounts }) {
                             user={user}
                             deposit={deposit}
                             withdraw={withdraw}
+                            weiVal={weiVal}
+                            displayVal={displayVal}
                             web3={web3}
                             balances={balances}
-                            updateBalances={updateBalances}
                         />
                         {web3.utils.hexToUtf8(user.selectedToken.ticker) === "DAI" ? null : (
                             <NewOrder createLimitOrder={createLimitOrder} createMarketOrder={createMarketOrder} />
                         )}
                     </div>
                     <div className="col-sm-8">
-                        <AllOrders orders={orders} web3={web3} />
-                        <AllTrades trades={tradesRef.current} web3={web3} />
+                        <AllOrders orders={orders} displayVal={displayVal} />
+                        <AllTrades trades={tradesRef.current} displayVal={displayVal} />
                     </div>
                 </div>
             </main>

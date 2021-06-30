@@ -2,7 +2,7 @@ import React from "react";
 import Moment from "react-moment";
 import RenderChart from "./RenderChart";
 
-const AllTrades = ({ trades, web3 }) => {
+const AllTrades = ({ trades, displayVal }) => {
     // check trades for erroneous duplicates (on recent trade)
     const removeDuplicates = (tradeList) => {
         let set = {};
@@ -30,7 +30,7 @@ const AllTrades = ({ trades, web3 }) => {
                     <tbody>
                         {revTrades.map((trade) => (
                             <tr key={trade.tradeId}>
-                                <td>{web3.utils.fromWei(trade.amount)}</td>
+                                <td>{displayVal(trade.amount)}</td>
                                 <td>{trade.price}</td>
                                 <td>
                                     <Moment fromNow>{parseInt(trade.timestamp) * 1000}</Moment>

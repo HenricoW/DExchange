@@ -5,7 +5,7 @@ const DIRECTION = {
     WITHDRAW: "WITHDRAW",
 };
 
-const Wallet = ({ user, deposit, withdraw, web3, balances, updateBalances }) => {
+const Wallet = ({ user, deposit, withdraw, web3, balances, displayVal, weiVal }) => {
     const [direction, setDirection] = useState(DIRECTION.DEPOSIT);
     const [amount, setAmount] = useState(0);
     const [bals, setBals] = useState(undefined);
@@ -16,9 +16,8 @@ const Wallet = ({ user, deposit, withdraw, web3, balances, updateBalances }) => 
 
     const onSubmit = (e) => {
         e.preventDefault();
-        const weiAmount = web3.utils.toWei(amount);
+        const weiAmount = weiVal(amount);
         direction === DIRECTION.DEPOSIT ? deposit(weiAmount) : withdraw(weiAmount);
-        // updateBalances(user.accounts[0], user.selectedToken)
     };
 
     return (
@@ -31,12 +30,7 @@ const Wallet = ({ user, deposit, withdraw, web3, balances, updateBalances }) => 
                 </label>
                 <div className="col-sm-8">
                     {bals && (
-                        <input
-                            className="form-control"
-                            id="wallet"
-                            disabled
-                            value={web3.utils.fromWei(bals.tokenWallet.toString())}
-                        />
+                        <input className="form-control" id="wallet" disabled value={displayVal(bals.tokenWallet)} />
                     )}
                 </div>
             </div>
@@ -45,14 +39,7 @@ const Wallet = ({ user, deposit, withdraw, web3, balances, updateBalances }) => 
                     Dex
                 </label>
                 <div className="col-sm-8">
-                    {bals && (
-                        <input
-                            className="form-control"
-                            id="wallet"
-                            disabled
-                            value={web3.utils.fromWei(bals.tokenDex.toString())}
-                        />
-                    )}
+                    {bals && <input className="form-control" id="wallet" disabled value={displayVal(bals.tokenDex)} />}
                 </div>
             </div>
             <h3>Transfer {web3.utils.hexToUtf8(user.selectedToken.ticker)}</h3>
