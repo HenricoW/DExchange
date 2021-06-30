@@ -27,6 +27,7 @@ function App({ web3, contracts, accounts }) {
     });
     const [trades, _setTrades] = useState([]);
     const [listener, setListener] = useState(undefined);
+    const [priceDigits, setPriceDigits] = useState(6);
 
     const tradesRef = useRef(trades);
 
@@ -145,9 +146,9 @@ function App({ web3, contracts, accounts }) {
 
     const weiVal = (val) => {
         const tickerStr = web3.utils.hexToUtf8(user.selectedToken.ticker);
-        val = Number(val) * 1000;
-        const sixDigVal = web3.utils.toWei(val.toString(), "kwei");
-        const stdDigVal = web3.utils.toWei(val.toString(), "milli");
+        val = Number(val) * 10 ** priceDigits;
+        const sixDigVal = web3.utils.toWei(val.toString(), "wei");
+        const stdDigVal = web3.utils.toWei(val.toString(), "micro");
         return sixDigits.includes(tickerStr) ? sixDigVal : stdDigVal;
     };
 
@@ -161,12 +162,9 @@ function App({ web3, contracts, accounts }) {
         await updateBalances(user.accounts[0], user.selectedToken);
     };
 
-    const priceValueDigits = 6;
     const createLimitOrder = async (side, amount, price) => {
         const weiAmount = weiVal(amount);
-        // price = web3.utils.toBN(Number(price) * Math.pow(10, priceValueDigits));
-        // price = price.div(web3.utils.toBN(Math.pow(10, priceValueDigits)));
-        // console.log(price);
+        price = (price * 10 ** priceDigits).toString();
         await contracts.dex.methods
             .createLimitOrder(side, user.selectedToken.ticker, price, weiAmount)
             .send({ from: accounts[0] });
@@ -196,8 +194,8 @@ function App({ web3, contracts, accounts }) {
                         )}
                     </div>
                     <div className="col-sm-8">
-                        <AllOrders orders={orders} displayVal={displayVal} />
-                        <AllTrades trades={tradesRef.current} displayVal={displayVal} />
+                        <AllOrders orders={orders} displayVal={displayVal} priceDigits={priceDigits} />
+                        <AllTrades trades={tradesRef.current} displayVal={displayVal} priceDigits={priceDigits} />
                     </div>
                 </div>
             </main>

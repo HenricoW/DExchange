@@ -1,7 +1,7 @@
 import React from "react";
 import Moment from "react-moment";
 
-const AllOrders = ({ orders, displayVal }) => {
+const AllOrders = ({ orders, displayVal, priceDigits }) => {
     const renderList = (orderList, side, className) => {
         return (
             <>
@@ -20,7 +20,7 @@ const AllOrders = ({ orders, displayVal }) => {
                         {orderList.map((order) => (
                             <tr key={order.id}>
                                 <td>{displayVal(order.remaining)}</td>
-                                <td>{order.price}</td>
+                                <td>{Number(order.price) / 10 ** priceDigits}</td>
                                 <td>
                                     <Moment fromNow>{parseInt(order.date) * 1000}</Moment>
                                 </td>

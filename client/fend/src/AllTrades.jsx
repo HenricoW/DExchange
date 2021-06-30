@@ -2,7 +2,7 @@ import React from "react";
 import Moment from "react-moment";
 import RenderChart from "./RenderChart";
 
-const AllTrades = ({ trades, displayVal }) => {
+const AllTrades = ({ trades, displayVal, priceDigits }) => {
     // check trades for erroneous duplicates (on recent trade)
     const removeDuplicates = (tradeList) => {
         let set = {};
@@ -31,7 +31,7 @@ const AllTrades = ({ trades, displayVal }) => {
                         {revTrades.map((trade) => (
                             <tr key={trade.tradeId}>
                                 <td>{displayVal(trade.amount)}</td>
-                                <td>{trade.price}</td>
+                                <td>{Number(trade.price) / 10 ** priceDigits}</td>
                                 <td>
                                     <Moment fromNow>{parseInt(trade.timestamp) * 1000}</Moment>
                                 </td>
@@ -48,7 +48,7 @@ const AllTrades = ({ trades, displayVal }) => {
             <h2 className="card-title">All trades</h2>
             <div className="row">
                 <div className="col-sm-12">
-                    <RenderChart trades={filteredTrades} />
+                    <RenderChart trades={filteredTrades} priceDigits={priceDigits} />
                     {renderList(filteredTrades, "trade-list")}
                 </div>
             </div>

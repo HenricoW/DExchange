@@ -17,6 +17,8 @@ contract dExch {
     // exchange properties
     bytes32 constant DAI = bytes32('DAI');              // Quote currency of the exchange
     address public admin;
+    // NOTE: ALL PRICES ARE THIS MANY ORDERS OF MAGNITUDE LARGER AND STORED AS SUCH, CONVERTED BACK FOR ALL CALCULATIONS
+    uint public priceDecimals = 6;                      // # of decimals for price values
 
     // order properties
 
@@ -112,7 +114,7 @@ contract dExch {
         
         // check necessary balance: buy (DAI) or sell (ticker)
         if(side == Side.BUY) { 
-            require(userBalances[msg.sender][DAI] >= _amount * price, 'dExch (createLimitOrder): Insufficient DAI balance');
+            require(userBalances[msg.sender][DAI] >= (_amount * price) / (10**priceDecimals), 'dExch (createLimitOrder): Insufficient DAI balance');
         } else {
             require(userBalances[msg.sender][ticker] >= _amount, 'dExch (createLimitOrder): Insufficient token balance');
         }
@@ -133,7 +135,7 @@ contract dExch {
         return orderBooks[_ticker][uint(_side)];
     }
 
-    // create market order (ticker, side, amount, price)
+    // create market order (ticker, side, amount)
     function createMarketOrder(bytes32 ticker, Side side, uint amount) external tokenExists(ticker) notQuoteTkn(ticker) {
 
         // check necessary balance: sell (ticker)
@@ -159,7 +161,7 @@ contract dExch {
             uint fillAmount = (_amount > _oBook[i].remaining) ? _oBook[i].remaining : _amount;
 
             // if BUY: check DAI balance => will work even if amount > balance[msg.sender] > oBook[0].remaining
-            uint DAIamount = fillAmount * _oBook[i].price;
+            uint DAIamount = fillAmount * _oBook[i].price / (10**priceDecimals);
 
             // update order book
             _oBook[i].remaining -= fillAmount;
