@@ -26,7 +26,6 @@ contract("dexTest", (accounts) => {
 
     beforeEach(async () => {
         [dex, dai, bat, rep, zrx] = await Promise.all([Dex.new(), Dai.new(), Bat.new(), Rep.new(), Zrx.new()]);
-        // await wait(1);
 
         const tokenPtrs = [dai, bat, rep, zrx];
 
@@ -38,13 +37,10 @@ contract("dexTest", (accounts) => {
             dex.addToken(b32ZRX, zrx.address),
         ]);
 
-        // await wait(1);
-
         // seed accounts with each token supported
         dexClients.map(async (acc) => {
             await Promise.all(tokenPtrs.map((ptr) => ptr.faucet(acc, amounts)));
         });
-        // await wait(1);
 
         // approve the dex on the account owners' behalf
         dexClients.map(async (acc) => {
@@ -119,7 +115,7 @@ contract("dexTest", (accounts) => {
     // Happy path - token supported, enough balance for trade, not in DAI: PASS
     it("Higher price buy limit orders should bubble to top", async () => {
         await dex.deposit(b32DAI, web3.utils.toWei("100"), { from: accounts[1] });
-        await dex.createLimitOrder(0, b32BAT, 10, web3.utils.toWei("2"), { from: accounts[1] });
+        await dex.createLimitOrder(SIDE.BUY, b32BAT, 10, web3.utils.toWei("2"), { from: accounts[1] });
 
         let orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
         let orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
@@ -141,7 +137,7 @@ contract("dexTest", (accounts) => {
 
         // SECOND LIMIT ORDER
         await dex.deposit(b32DAI, web3.utils.toWei("100"), { from: accounts[2] });
-        await dex.createLimitOrder(0, b32BAT, 11, web3.utils.toWei("1"), { from: accounts[2] });
+        await dex.createLimitOrder(SIDE.BUY, b32BAT, 11, web3.utils.toWei("1"), { from: accounts[2] });
 
         orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
         orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
@@ -159,7 +155,7 @@ contract("dexTest", (accounts) => {
         // assert(orderBookB[1].creator === accounts[1]);
 
         // THIRD LIMIT ORDER
-        await dex.createLimitOrder(0, b32BAT, 12, web3.utils.toWei("2"), { from: accounts[1] });
+        await dex.createLimitOrder(SIDE.BUY, b32BAT, 12, web3.utils.toWei("2"), { from: accounts[1] });
 
         orderBookB = await dex.viewOrderBook(b32BAT, SIDE.BUY);
         orderBookS = await dex.viewOrderBook(b32BAT, SIDE.SELL);
@@ -188,7 +184,7 @@ contract("dexTest", (accounts) => {
         //     dex.createLimitOrder(1, b32BAT, web3.utils.toWei('2'), 5, {from: accounts[1]})
         //     , "Insufficient token balance");
         await expectRevert.unspecified(
-            dex.createLimitOrder(1, b32BAT, 5, web3.utils.toWei("2"), { from: accounts[1] })
+            dex.createLimitOrder(SIDE.SELL, b32BAT, 5, web3.utils.toWei("2"), { from: accounts[1] })
         );
     });
 
@@ -201,7 +197,7 @@ contract("dexTest", (accounts) => {
         //     dex.createLimitOrder(0, b32BAT, web3.utils.toWei('12'), 10, {from: accounts[1]})
         //     , "Insufficient DAI balance");
         await expectRevert.unspecified(
-            dex.createLimitOrder(0, b32BAT, 10, web3.utils.toWei("12"), { from: accounts[1] })
+            dex.createLimitOrder(SIDE.BUY, b32BAT, 10, web3.utils.toWei("12"), { from: accounts[1] })
         );
     });
 });
