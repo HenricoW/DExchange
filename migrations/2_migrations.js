@@ -7,7 +7,9 @@ const ERC20 = artifacts.require("../client/fend/src/contracts/ERC20");
 
 // RINKEBY
 const DAI_ADDR = "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea";
-const BAT_ADDR = "0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99";
+const BAT_ADDR = "0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99"; // CAUSES FAILURES ON TRANSFER_FROM (RINKEBY)
+const ZRX_ADDR = "0xddea378a6ddc8afec82c36e9b0078826bf9e68b6";
+const USDC_ADDR = "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b";
 
 const wait = (secs) => {
     return new Promise((res, rej) => {
@@ -24,10 +26,19 @@ module.exports = async (deployer, network, accounts) => {
     if (network !== "development") {
         await deployer.deploy(Dex);
         const dex = await Dex.deployed();
-        const dai = await ERC20.at(DAI_ADDR);
-        const bat = await ERC20.at(BAT_ADDR);
-        const [b32DAI, b32BAT] = ["DAI", "BAT"].map((item) => web3.utils.fromAscii(item));
-        await Promise.all([dex.addToken(b32DAI, DAI_ADDR), dex.addToken(b32BAT, BAT_ADDR)]);
+        // const dai = await ERC20.at(DAI_ADDR);
+        // const bat = await ERC20.at(BAT_ADDR);
+        // const zrx = await ERC20.at(ZRX_ADDR);
+        const [b32DAI, b32ZRX, b32USDC] = ["DAI", "ZRX", "USDC"].map((item) => web3.utils.fromAscii(item));
+        await Promise.all([
+            dex.addToken(b32DAI, DAI_ADDR),
+            dex.addToken(b32ZRX, ZRX_ADDR),
+            dex.addToken(b32USDC, USDC_ADDR),
+        ]);
+        await wait(3);
+        const rawTokens = await dex.viewTokenList();
+        const tokens = rawTokens.map((tkn) => tkn.split(0, 3));
+        console.log(tokens);
     }
 
     if (network === "development") {
