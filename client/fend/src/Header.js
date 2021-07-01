@@ -19,7 +19,7 @@ const Header = ({ dex, user, tokens, onSelect, web3 }) => {
                     />
                 </div>
                 <div className="col-sm-10s">
-                    <h2>Ash Exchange v0.1</h2>
+                    <h2>Ash Exchange v0.3</h2>
                     <h6>
                         <span className="contract-addr">
                             Contract address: <span className="address">{dex.options.address}</span>

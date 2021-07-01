@@ -85,7 +85,6 @@ module.exports = async (deployer, network, accounts) => {
         console.log("Exch Bat balance: ", web3.utils.fromWei(ExbalBat));
         console.log("Dai balance: ", web3.utils.fromWei(balDai));
         console.log("Bat balance: ", web3.utils.fromWei(balBat));
-
         // =========================================================================== //
         // const increaseTime = async seconds => {
         //     await web3.currentProvider.send({
@@ -101,7 +100,6 @@ module.exports = async (deployer, network, accounts) => {
         //         id: 0
         //     }, () => {});
         // }
-
         // //create trades
         // await dex.createLimitOrder(SIDE.BUY, b32BAT, 1000, 10, {from: trader1});
         // await dex.createMarketOrder(b32BAT, SIDE.SELL, 1000, {from: trader2});
@@ -110,7 +108,6 @@ module.exports = async (deployer, network, accounts) => {
         // await dex.createMarketOrder(b32BAT, SIDE.SELL, 1200, {from: trader2});
         // await increaseTime(1);
         // console.log("Done with matching orders");
-
         // //create orders
         // await Promise.all([
         //     dex.createLimitOrder(SIDE.BUY, b32BAT, 1400, 10, {from: trader1}),
