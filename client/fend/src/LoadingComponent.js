@@ -36,6 +36,13 @@ const LoadingComponent = () => {
       <button type="submit" className="btn btn-primary mt-5" onClick={async () => await connectWeb3()}>
         Connect MetaMask
       </button>
+      <h5 className="mt-5 pt-2">
+        To use this Dapp, get some Compound (switch to Rinkeby first) DAI, ZRX &amp; USDC here:
+      </h5>
+      <a href="https://app.compound.finance/" target="_blank">
+        <h5 style={{ color: "turquoise" }}>Compound</h5>
+      </a>
+      <h5 className="mt-3">Select the token under &quot;Supply Markets&quot; &gt; WITHDRAW &gt; FAUCET (at bottom)</h5>
     </div>
   ) : chainId === 4 ? (
     <App web3={web3} contracts={contracts} accounts={accounts} />

@@ -190,7 +190,7 @@ function App({ web3, contracts, accounts }) {
               <NewOrder createLimitOrder={createLimitOrder} createMarketOrder={createMarketOrder} />
             )}
           </div>
-          <div className="col-sm-8 col-right">
+          <div className="col-sm-8 col-right pl-3">
             <AllOrders orders={orders} displayVal={displayVal} priceDigits={priceDigits} />
             <AllTrades trades={tradesRef.current} displayVal={displayVal} priceDigits={priceDigits} />
           </div>
