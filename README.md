@@ -8,7 +8,7 @@ Decentralised front end:
 Usage:
 
 - Switch your wallet over to the Rinkeby network
-- Go the dApp and connect (https://obdex.netlify.app)
+- Go the dApp and connect
 - Switch tokens (near top left) from DAI (the base token) to view order books and charts
 - DAI is the base token, so it cannot be traded - other tokens trade against it
 - Works with Compound compatible DAI, USDC, ZRX, etc. on Rinkeby
