@@ -2,7 +2,11 @@
 
 An order book based ERC20 decentralised exchange, currently deployed on Rinkeby.
 
+Decentralised front end:
+[https://bah5acgzatojadfpz5rl4kvhxje4cpllvqujdeg54qb2hbihnldlejafhes7a.bzz.link/](https://bah5acgzatojadfpz5rl4kvhxje4cpllvqujdeg54qb2hbihnldlejafhes7a.bzz.link/)
+
 Usage:
+
 - Switch your wallet over to the Rinkeby network
 - Go the dApp and connect (https://obdex.netlify.app)
 - Switch tokens (near top left) from DAI (the base token) to view order books and charts
